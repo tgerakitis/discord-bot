@@ -2,7 +2,13 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const Client = require('./client/Client');
 const config = require('./config.json');
-const {Player} = require('discord-player');
+const { Player } = require('discord-player');
+const dotenv = require("dotenv");
+const { isSharedArrayBuffer } = require('util/types');
+
+dotenv.config();
+config.token = process.env.DISCORD_TOKEN;
+console.log(config.token);
 
 const client = new Client();
 client.commands = new Discord.Collection();
@@ -50,7 +56,7 @@ client.once('ready', async () => {
   console.log('Ready!');
 });
 
-client.on('ready', function() {
+client.on('ready', function () {
   client.user.setActivity(config.activity, { type: config.activityType });
 });
 
