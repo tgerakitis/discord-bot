@@ -5,5 +5,7 @@ services:
     build:
         context: ./
         dockerfile: Dockerfile
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
     container_name: discord-bot
     restart: always
