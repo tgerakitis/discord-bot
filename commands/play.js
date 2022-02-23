@@ -1,5 +1,5 @@
-const {GuildMember} = require('discord.js');
-const {QueryType} = require('discord-player');
+const { GuildMember } = require('discord.js');
+const { QueryType } = require('discord-player');
 
 module.exports = {
   name: 'play',
@@ -32,24 +32,24 @@ module.exports = {
       }
 
       await interaction.deferReply();
-
+      player.use("YOUTUBE_DL", require("@discord-player/downloader").Downloader);
       const query = interaction.options.get('query').value;
       const searchResult = await player
         .search(query, {
           requestedBy: interaction.user,
           searchEngine: QueryType.AUTO,
         })
-        .catch(() => {});
+        .catch(() => { });
       if (!searchResult || !searchResult.tracks.length)
-        return void interaction.followUp({content: 'No results were found!'});
+        return void interaction.followUp({ content: 'No results were found!' });
 
       const queue = await player.createQueue(interaction.guild, {
         ytdlOptions: {
-				quality: "highest",
-				filter: "audioonly",
-				highWaterMark: 1 << 25,
-				dlChunkSize: 0,
-			},
+          quality: "highest",
+          filter: "audioonly",
+          highWaterMark: 1 << 25,
+          dlChunkSize: 0,
+        },
         metadata: interaction.channel,
       });
 
