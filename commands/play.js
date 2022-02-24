@@ -1,4 +1,4 @@
-const { GuildMember } = require('discord.js');
+const { GuildMember, Interaction, Message } = require('discord.js');
 const { QueryType } = require('discord-player');
 
 module.exports = {
@@ -12,66 +12,103 @@ module.exports = {
       required: true,
     },
   ],
-  async execute(interaction, player) {
+  async execute(messageOrInteraction, player) {
+    const isInteraction = messageOrInteraction instanceof Interaction;
     try {
-      if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
-        return void interaction.reply({
-          content: 'You are not in a voice channel!',
-          ephemeral: true,
-        });
+      if (isInteraction) {
+        if (!(messageOrInteraction.member instanceof GuildMember) || !messageOrInteraction.member.voice.channel) {
+          return void messageOrInteraction.reply({
+            content: 'You are not in a voice channel!',
+            ephemeral: true,
+          });
+        }
+        await messageOrInteraction.deferReply();
       }
 
       if (
-        interaction.guild.me.voice.channelId &&
-        interaction.member.voice.channelId !== interaction.guild.me.voice.channelId
+        messageOrInteraction.guild.me.voice.channelId &&
+        messageOrInteraction.member.voice.channelId !== messageOrInteraction.guild.me.voice.channelId
       ) {
-        return void interaction.reply({
-          content: 'You are not in my voice channel!',
-          ephemeral: true,
-        });
+        const reply = 'You are not in my voice channel!';
+        if (isInteraction) {
+          return void messageOrInteraction.followUp({
+            content: reply,
+            ephemeral: true,
+          });
+        }
+        return void messageOrInteraction.channel.send(reply);
       }
+      let query = '';
+      if (isInteraction) {
+        query = messageOrInteraction.options.get('query').value;
+      } else {
+        query = messageOrInteraction.content.replace('!play', '').trim();
+        if (query === '') {
+          return void messageOrInteraction.channel.send('empty search query!');
+        }
 
-      await interaction.deferReply();
+      }
       player.use("YOUTUBE_DL", require("@discord-player/downloader").Downloader);
-      const query = interaction.options.get('query').value;
+      let requestedBy = '';
+      if (isInteraction) {
+        requestedBy = messageOrInteraction.user;
+      } else {
+        requestedBy = messageOrInteraction.author;
+      }
       const searchResult = await player
         .search(query, {
-          requestedBy: interaction.user,
+          requestedBy: requestedBy,
           searchEngine: QueryType.AUTO,
         })
         .catch(() => { });
-      if (!searchResult || !searchResult.tracks.length)
-        return void interaction.followUp({ content: 'No results were found!' });
-
-      const queue = await player.createQueue(interaction.guild, {
+      if (!searchResult || !searchResult.tracks.length) {
+        const reply = 'No results were found!';
+        if (isInteraction) {
+          return void messageOrInteraction.followUp({ content: reply });
+        }
+        return void messageOrInteraction.channel.send(reply);
+      }
+      const queue = await player.createQueue(messageOrInteraction.guild, {
         ytdlOptions: {
           quality: "highest",
           filter: "audioonly",
           highWaterMark: 1 << 25,
           dlChunkSize: 0,
         },
-        metadata: interaction.channel,
+        metadata: messageOrInteraction.channel,
       });
 
       try {
-        if (!queue.connection) await queue.connect(interaction.member.voice.channel);
-      } catch {
-        void player.deleteQueue(interaction.guildId);
-        return void interaction.followUp({
-          content: 'Could not join your voice channel!',
-        });
+        if (!queue.connection) await queue.connect(messageOrInteraction.member.voice.channel);
+      } catch (error) {
+        void player.deleteQueue(messageOrInteraction.guildId);
+        const reply = 'Could not join your voice channel!';
+        if (isInteraction) {
+          return void messageOrInteraction.followUp({
+            content: reply,
+          });
+        }
+        return void messageOrInteraction.channel.send(reply);
       }
-
-      await interaction.followUp({
-        content: `⏱ | Loading your ${searchResult.playlist ? 'playlist' : 'track'}...`,
-      });
+      const loadingMessage = `⏱ | Loading your ${searchResult.playlist ? 'playlist' : 'track'}...`;
+      if (isInteraction) {
+        await messageOrInteraction.followUp({
+          content: loadingMessage,
+        });
+      } else {
+        await messageOrInteraction.channel.send(loadingMessage);
+      }
       searchResult.playlist ? queue.addTracks(searchResult.tracks) : queue.addTrack(searchResult.tracks[0]);
       if (!queue.playing) await queue.play();
     } catch (error) {
       console.log(error);
-      interaction.followUp({
-        content: 'There was an error trying to execute that command: ' + error.message,
-      });
+      const reply = 'There was an error trying to execute that command: ' + error.message;
+      if (isInteraction) {
+        messageOrInteraction.followUp({
+          content: reply,
+        });
+      }
+      return void messageOrInteraction.channel.send(reply);
     }
-  },
+  }
 };

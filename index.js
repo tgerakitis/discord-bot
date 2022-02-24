@@ -20,8 +20,6 @@ for (const file of commandFiles) {
   client.commands.set(command.name, command);
 }
 
-console.log(client.commands);
-
 const player = new Player(client);
 
 player.on('error', (queue, error) => {
@@ -68,6 +66,7 @@ client.once('disconnect', () => {
   console.log('Disconnect!');
 });
 
+
 client.on('messageCreate', async message => {
   if (message.author.bot || !message.guild) return;
   if (!client.application?.owner) await client.application?.fetch();
@@ -82,6 +81,12 @@ client.on('messageCreate', async message => {
         message.reply('Could not deploy commands! Make sure the bot has the application.commands permission!');
         console.error(err);
       });
+  }
+
+  if (message.content.startsWith('!play')) {
+    const play = require('./commands/play');
+    //command.execute(interaction, player);
+    play.execute(message, player);
   }
 });
 

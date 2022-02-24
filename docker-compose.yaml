@@ -1,11 +1,18 @@
 version: '3.3'
 
+volumes:
+  node-modules:
 services:
   discord-bot:
     build:
-        context: ./
-        dockerfile: Dockerfile
+      context: ./
+      dockerfile: Dockerfile
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
-    container_name: discord-bot
     restart: always
+    command: [ "npm", "run", "debug" ]
+    ports:
+      - 9229:9229
+    volumes:
+      - ./:/usr/src/app
+      - node-modules:/usr/src/app/node_modules
