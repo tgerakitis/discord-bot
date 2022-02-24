@@ -88,7 +88,7 @@ module.exports = {
         ytdlOptions: {
           quality: "highest",
           filter: "audioonly",
-          highWaterMark: 1 << 30,
+          highWaterMark: 1 << 40,
           dlChunkSize: 0,
         },
         metadata: messageOrInteraction.channel,
