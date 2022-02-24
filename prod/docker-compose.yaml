@@ -1,0 +1,12 @@
+version: '3.3'
+
+volumes:
+  node-modules:
+services:
+  discord-bot:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+    restart: always
