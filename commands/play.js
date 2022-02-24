@@ -46,8 +46,24 @@ module.exports = {
         if (query === '') {
           return void messageOrInteraction.channel.send('empty search query!');
         }
-
       }
+      /**
+       * (async () => {
+  const playlist = await ytpl(playlistId);
+  const items = playlist.items.slice(0, limit);
+  console.log(items);
+
+  for (const { id, title, url } of items) {
+    console.log('Downloading', title);
+    const stream = ytdl(url).pipe(fs.createWriteStream(`${id}.mp4`));
+    await new Promise((resolve, reject) => {
+      stream.on('finish', resolve);
+      stream.on('error', reject);
+    });
+  }
+})().catch(console.error);
+
+       */
       player.use("YOUTUBE_DL", require("@discord-player/downloader").Downloader);
       let requestedBy = '';
       if (isInteraction) {
@@ -72,7 +88,8 @@ module.exports = {
         ytdlOptions: {
           quality: "highest",
           filter: "audioonly",
-          highWaterMark: 1 << 25,
+          liveBuffer: 180000,
+          //highWaterMark: 1<<25,
           dlChunkSize: 0,
         },
         metadata: messageOrInteraction.channel,
